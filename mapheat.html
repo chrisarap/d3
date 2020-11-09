@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://d3js.org/d3.v4.js"></script>
+</head>
+<body>
+<script>
+var width = 800;
+var height = 450;
+var padding = 30;
+var url = 'https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/global-temperature.json';
+
+// import data from json
+d3.json(url, callback)
+
+function callback(error, dataset){
+	// create canvas
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.style("background", "green");
+ 
+
+	// scales
+	var xScale = d3.scaleBand()
+		.domain(dataset.monthlyVariance.map(d=>d.year))
+		.range([padding, width - padding])
+	// x axis
+	var xAxis = d3.axisBottom(xScale).tickValues(xScale.domain().filter(d => d % 10 == 0));
+
+		// calling axis
+		svg.append("g")
+			.attr("transform", "translate(0, " + (height - padding) + ")")
+			.call(xAxis)
+
+	var monthNumber = [1,2,3,4,5,6,7,8,9,10,11,12].reverse();
+	var monthName = ["jan", "feb", "mar", "apr", "may", "jun", 
+		"jul", "aug","sep", "oct", "nov", "dec"];
+	
+	var yScale = d3.scaleBand()
+		.domain(monthNumber)
+		.range([height - padding, padding]);
+
+	var yAxis = d3.axisLeft(yScale).tickFormat(monthNum => monthName[monthNum - 1]);
+		svg.append("g")
+			.attr("transform", "translate(" + padding + ", 0)")
+			.call(yAxis)
+
+	// color scale
+	var color = d3.scaleLinear()
+		.domain([
+			d3.min(dataset.monthlyVariance, d => d.variance),
+			d3.max(dataset.monthlyVariance, d => d.variance)
+		])
+		.range(["white", "blue"]);
+
+ 	// print squares
+	svg.selectAll("rect")
+		.data(dataset.monthlyVariance)
+		.enter()
+		.append("rect")
+		.attr("x", d => xScale(d.year))
+		.attr("y", d => yScale(d.month))
+		.attr("width", xScale.bandwidth())
+		.attr("height", yScale.bandwidth())
+		.style("fill", d => color(d.variance))
+}
+</script>
+</body>
+</html>

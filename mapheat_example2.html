@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://d3js.org/d3.v4.js"></script>
+</head>
+<body>
+<script>
+	var width = 300;
+	var height = 300;
+	var padding = 30;
+
+	// Labels of row and columns
+	var myGroups = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+	var myVars = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"]
+
+	// create canvas
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.style("background", "green")
+
+	// scales
+	var xScale = d3.scaleBand()
+		.domain(myGroups)
+		.range([padding, width - padding])
+	svg.append("g")
+		.attr("transform", "translate(0, "+ (height - padding)+")")
+		.call(d3.axisBottom(xScale))
+
+	var yScale = d3.scaleBand()
+		.domain(myVars)
+		.range([height - padding, padding])
+	svg.append("g")
+		.attr("transform", "translate(" + padding + ")")
+		.call(d3.axisLeft(yScale))
+
+	// color scale		
+	var color = d3.scaleLinear()
+		.domain([1, 100])
+		.range(["lightblue", "cyan"])		
+
+	// print rects
+	d3.csv('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/heatmap_data.csv',
+		function(data){
+			svg.selectAll("rect")
+				.data(data)
+				.enter()
+				.append("rect")
+				.attr("x", d => xScale(d.group))
+				.attr("y", d => yScale(d.variable))
+				.attr("width", xScale.bandwidth())
+				.attr("height", yScale.bandwidth())
+				.style("fill", d => color(d.value))
+		}
+	);
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://d3js.org/d3.v4.js"></script>
+</head>
+<body>
+<script>
+var width = 800;
+var height = 450;
+var padding = 30;
+var url = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json';
+
+// import data from json url
+d3.json(url, callback);
+
+//console.log(d3.scaleOrdinal(d3.schemeCategory20));
+//console.log(d3.schemeCategory20);
+
+
+
+function callback(error, dataset){
+
+	var bigNames = dataset.children.map(d=>d.name);
+	var colors = d3.schemeCategory20;
+	var paint = d3.scaleOrdinal()
+		.domain(bigNames)
+		.range(colors);
+
+	// create canvas
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		//.style("background", "green");
+
+	var root = d3.hierarchy(dataset)
+		.sum(d => d.value)
+
+	d3.treemap(root)
+		.size([width, height])
+		.padding(2)(root)
+
+	//print rect
+	svg.selectAll("rect")
+		.data(root.leaves())
+		.enter()
+		.append("rect")
+		.attr("x", d => d.x0)
+		.attr("y", d => d.y0)
+		.attr("width", d => d.x1 - d.x0)
+		.attr("height", d => d.y1 - d.y0)
+		.style("fill", d => paint(d.parent.data.name))
+
+	svg.selectAll("text")
+		.data(root.leaves())
+		.enter()
+		.append("text")
+		.attr("x", d => d.x0 + 5)
+		.attr("y", d => d.y0 + 5)
+		.text(d=>d.data.name)
+		.style("font-size", "7px")
+
+
+}
+</script>
+</body>
+</html>

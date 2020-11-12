@@ -2,17 +2,24 @@
 <html>
 <head>
 <meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<!--
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="http://d3js.org/topojson.v1.min.js"></script>
+
 <script src="https://d3js.org/d3-array.v2.min.js"></script>
 <script src="https://d3js.org/d3-geo.v2.min.js"></script>
-
+-->
 <style>
 	path {
    		stroke: white;
    		stroke-width: 0.25px;
-   		fill: green;
    	}
 
 	path:hover {
@@ -24,8 +31,10 @@
 <script>
 	// fcc_url = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
 	// us_map = 'https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json';
+	// url_edu = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
+	
 	var width = 1000;
-	var height = 1000;
+	var height = 600;
 
 	var path = d3.geoPath();
 
@@ -35,22 +44,42 @@
 		.attr('height', height)
 		.style('background', 'lightblue')
 
-	var url = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
+	var urlCounties = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
+	var urlEdu = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
 
-	d3.json(url, function(error, topology){
-		if (error) throw error;
+	d3.queue()
+		.defer(d3.json, urlCounties)
+		.defer(d3.json, urlEdu)
+		.await(ready);
 
-		console.log('topology', topology);
-		var geojson = topojson.feature(topology, topology.objects.counties);
-		console.log('geojson', geojson);
+	// Data and color scale
+	var data = d3.map();
+	var color = d3.scaleLinear()
+		.domain([0,	100])
+		.range(["white", "red"]);
 
-		svg.append('g')
-			.selectAll('path')
-			.data(geojson.features)
-			.enter()
-			.append('path')
-			.attr('d', path);
-	});
+function ready(error, topology, education){
+	if (error) throw error;
+	
+	
+	// console.log('education', education);
+	// console.log('topology', topology);
+	var geojson = topojson.feature(topology, topology.objects.counties);
+	console.log('geojson', geojson);
+	// topo data id
+	var arr = geojson.features.map(d=>d.id);
+	
+	svg.append('g')
+		.selectAll('path')
+		.data(geojson.features)
+		.enter()
+		.append('path')
+		.attr('d', path)
+		.attr('fill', function(d,s){
+			return arr.includes(education[s].fips) ? color(education[s].bachelorsOrHigher) : 0;
+		})
+		
+}
 </script>
 </body>
 </html>

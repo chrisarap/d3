@@ -6,16 +6,6 @@
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-<!--
-<script src="https://d3js.org/d3.v6.min.js"></script>
-<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
-
-<script src="http://d3js.org/d3.v3.min.js"></script>
-
-<script src="https://d3js.org/d3-array.v2.min.js"></script>
-<script src="https://d3js.org/d3-geo.v2.min.js"></script>
--->
 <style>
 	path {
    		stroke: white;
@@ -28,21 +18,55 @@
 </style>
 </head>
 <body>
+	<h1 id="title">United States Educational Attainment</h1>
+	<h2 id="description">Porcentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)</h2>
 <script>
-	// fcc_url = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
-	// us_map = 'https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json';
-	// url_edu = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
-	
 	var width = 1000;
 	var height = 600;
-
 	var path = d3.geoPath();
-
+	
+	// googsd
+	var color = d3.scaleLinear()
+		.domain([0, 66])
+		.range(["white", "red"]);
+var arr = [0, 20, 40, 60, 80, 100];
 	var svg = d3.select('body')
 		.append("svg")
 		.attr('width', width)
 		.attr('height', height)
 		.style('background', 'lightblue')
+
+		.selectAll('rect')
+		.data(arr)
+		.enter()
+		.append('rect')
+		.attr("x", d => d)
+		.attr("width", 20)
+		.attr("height", 20)
+		.style("fill", d => color(d))
+	// scales
+	const xScale = d3.scaleLinear()
+		.domain([0, 100])
+		.range([0, width /5]);
+	
+	const xAxis = d3.axisBottom(xScale);
+
+	var arr = [0, 20, 40, 60, 80, 100];
+	// call axis
+	svg.append("g")
+		.attr("transform", "translate(" + 600 +", " + 50 + ")")
+		.call(
+			xAxis
+			.tickSize(13)
+    		.tickFormat(x => x + '%')
+    		.tickValues(x => color(x))
+		)
+
+	var tooltip = d3.select('svg')
+		.append("title")
+		.append('div')
+		.attr('id', 'tooltip')
+		.style('visibility', 'hidden')
 
 	var urlCounties = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
 	var urlEdu = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
@@ -52,34 +76,51 @@
 		.defer(d3.json, urlEdu)
 		.await(ready);
 
+
 	// Data and color scale
 	var data = d3.map();
-	var color = d3.scaleLinear()
-		.domain([0,	100])
-		.range(["white", "red"]);
+	
 
 function ready(error, topology, education){
 	if (error) throw error;
-	
-	
-	// console.log('education', education);
-	// console.log('topology', topology);
+
 	var geojson = topojson.feature(topology, topology.objects.counties);
-	console.log('geojson', geojson);
-	// topo data id
+	//console.log('geojson', geojson);
 	var arr = geojson.features.map(d=>d.id);
 	
+
+
 	svg.append('g')
+	.attr('id', 'legend')
 		.selectAll('path')
 		.data(geojson.features)
 		.enter()
 		.append('path')
+		.attr('class', 'county')
 		.attr('d', path)
 		.attr('fill', function(d,s){
-			return arr.includes(education[s].fips) ? color(education[s].bachelorsOrHigher) : 0;
+			return arr.includes(education[s].fips) 
+			? color(education[s].bachelorsOrHigher) 
+			: 0;
 		})
-		
+		.on("mouseover", function(d, s){
+			tooltip
+				.style("visibility", "visible")
+				.text( education[s].area_name + ". " +education[s].state+ ": " + education[s].bachelorsOrHigher + "%")
+		})
+		.attr('data-fips', d => d.id)
+		// d is features
+		.attr('data-education', (d) => {
+			var res = education.filter(obj => obj.fips == d.id)
+			return res[0] ? res[0].bachelorsOrHigher : 0;
+		})
+//		.attr('data-education', (d,s) => education[s].bachelorsOrHigher)
+
+
+	
+
 }
 </script>
+<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>
 </html>

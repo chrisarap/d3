@@ -2,6 +2,13 @@
 <html>
 <head>
 	<script src="https://d3js.org/d3.v4.js"></script>
+<style>
+	#tooltip{
+		position: absolute;
+		background: orange;
+		border-radius: 2px;
+	} 
+</style>
 </head>
 <body>
 	<h1 id=title>United State GPD</h1>
@@ -15,7 +22,6 @@
 		.append('svg')
 		.attr('width', width + 100)
 		.attr('height', height + 60)
-		.style('background', 'green')
 
 	var tooltip = d3.select('body')
 		.append('div')
@@ -117,9 +123,10 @@
 			// tooltip with mouse event
 			.on('mouseover', function (d, i) {
 				tooltip.style('opacity', 1)
-					.style('background', 'green')
 					.attr('data-date', dataset.data[i][0])
 					.html(years[i] +  ' ' + GDP[i])
+					.style('left', d3.event.pageX + 10 + 'px')
+        			.style('top', d3.event.pageY - 25 + 'px');
 			})
 			.on('mouseout', function() {
 				tooltip.style('opacity', 0);

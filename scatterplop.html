@@ -2,6 +2,13 @@
 <html>
 <head>
     <script src="https://d3js.org/d3.v4.js"></script>
+<style>
+    #tooltip{
+        position: absolute;
+        background: orange;
+        border-radius: 2px;
+    } 
+</style>
 </head>
 <body>
 
@@ -17,12 +24,12 @@
     // size
     var margin = {
         top: 100,
-        right: 20,
+        right: 30,
         bottom: 30,
-        left: 60
+        left: 50
     }, 
-    width = 920 - margin.left - margin.right,
-    height = 630 - margin.top - margin.bottom;
+    width = 900 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
 
     var tooltip = d3.select('body')
         .append('div')
@@ -61,7 +68,7 @@
         
         dataset.map(d => {
             var parsedTime = d.Time.split(':');
-            d.Time = new Date(Date.UTC(1970, 0, 1, 0, parsedTime[0], parsedTime[1]));
+            d.Time = new Date(Date.UTC(1975, 0, 1, 0, parsedTime[0], parsedTime[1]));
         });
 
         // scales part ii
@@ -100,6 +107,8 @@
                     .style('background', 'green')
                     .attr('data-year', d.Year)
                     .html(d.Name + ' ' + d.Nationality)
+                    .style('left', d3.event.pageX + 10 + 'px')
+                    .style('top', d3.event.pageY - 25 + 'px');
             })
             .on('mouseout', function() {
                 tooltip.style('opacity', 0);

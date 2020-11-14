@@ -15,111 +15,152 @@
 	path:hover {
 	  fill: brown;
 	}
+	#tooltip{
+		position: absolute;
+		background: orange;
+		border-radius: 2px;
+	} 
 </style>
 </head>
 <body>
-	<h1 id="title">United States Educational Attainment</h1>
-	<h2 id="description">Porcentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)</h2>
 <script>
-	var width = 1000;
+
+	// tooltip
+	var tooltip = d3.select('body')
+        .append('div')
+        .attr('id', 'tooltip')
+        .style('opacity', 0)
+	
+	// title
+	var title = d3.select('body')
+		.append('h1')
+		.text('United States Educational Attainment')
+		.attr('id', 'title');
+
+	// description
+	var description = d3.select('body')
+		.append('p')
+		.text('Porcentage of adults age 25 and older with a bachelor"s degree or higher (2010-2014)')
+		.attr('id', 'description');
+
+	// size
+	var width = 1000; 
 	var height = 600;
 	var path = d3.geoPath();
 	
-	// googsd
+	// color scale
 	var color = d3.scaleLinear()
 		.domain([0, 66])
 		.range(["white", "red"]);
-var arr = [0, 20, 40, 60, 80, 100];
+
+	// my canvas
 	var svg = d3.select('body')
 		.append("svg")
 		.attr('width', width)
 		.attr('height', height)
-		.style('background', 'lightblue')
+		.style('background', 'lightblue');
 
-		.selectAll('rect')
-		.data(arr)
-		.enter()
-		.append('rect')
-		.attr("x", d => d)
-		.attr("width", 20)
-		.attr("height", 20)
-		.style("fill", d => color(d))
-	// scales
-	const xScale = d3.scaleLinear()
-		.domain([0, 100])
-		.range([0, width /5]);
-	
-	const xAxis = d3.axisBottom(xScale);
-
-	var arr = [0, 20, 40, 60, 80, 100];
-	// call axis
-	svg.append("g")
-		.attr("transform", "translate(" + 600 +", " + 50 + ")")
-		.call(
-			xAxis
-			.tickSize(13)
-    		.tickFormat(x => x + '%')
-    		.tickValues(x => color(x))
-		)
-
-	var tooltip = d3.select('svg')
-		.append("title")
-		.append('div')
-		.attr('id', 'tooltip')
-		.style('visibility', 'hidden')
-
+	// url's
 	var urlCounties = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
 	var urlEdu = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
 
+	// create one big data
 	d3.queue()
 		.defer(d3.json, urlCounties)
 		.defer(d3.json, urlEdu)
-		.await(ready);
+		.await(callback);
+
+	// colos scale
+	var color = d3.scaleLinear()
+		.domain([0, 66])
+		.range(["white", "red"]);
+
+	function callback(error, topology, education){
+		//console.log('education', education);
+
+		// parse topology to geojson
+		var geojson = topojson.feature(topology, topology.objects.counties);
+		// console.log('geojson', geojson);
+		var arr = geojson.features.map(d=>d.id);
 
 
-	// Data and color scale
-	var data = d3.map();
+
+		svg.selectAll('path')
+			.data(geojson.features)
+			.enter()
+			.append('path')
+			.attr('class', 'county')
+			.attr('d', path)
+			// properties
+			.attr('data-fips', d => d.id)
+			.attr('data-education', function (d) {
+				var result = education.filter(obj => obj.fips === d.id);
+				return result[0] ? result[0].bachelorsOrHigher : 0;
+			 })
+			// color
+			.attr('fill', (d,s) => 
+				arr.includes(education[s].fips) 
+				? color(education[s].bachelorsOrHigher) 
+				: 0)
+			.on('mouseover', function (d) {
+			      tooltip.style('opacity', 0.9);
+			      tooltip
+			        .html(function () {
+			        	var result = education.filter(obj => obj.fips === d.id);
+						return result[0] 
+						? result[0]['area_name'] + ', ' + result[0]['state'] + ': ' + result[0].bachelorsOrHigher + '%'
+						: 0;
+			        })
+			        .attr('data-education', function () {
+						var result = education.filter(obj => obj.fips === d.id);
+						return result[0] ? result[0].bachelorsOrHigher : 0;
+					 })
+			        .style('left', d3.event.pageX + 10 + 'px')
+			        .style('top', d3.event.pageY - 30 + 'px');
+			    })
+			.on('mouseout', () => tooltip.style('opacity', 0));
+			
+	{/* legen */}
+	// size
+ 	var legendWidth = 300,
+ 		legendHeight = 200;
+
+	var grade = [0, 10,20,30,40,50,60,70,80,90,100]
+
+ 	// scale
+ 	var xLegendScale = d3.scaleLinear()
+ 		.domain([0, 100])
+ 		.range([0, legendWidth]);
+ 	
 	
 
-function ready(error, topology, education){
-	if (error) throw error;
+	// axis
+ 	var xLegendAxis = d3.axisBottom(xLegendScale);
 
-	var geojson = topojson.feature(topology, topology.objects.counties);
-	//console.log('geojson', geojson);
-	var arr = geojson.features.map(d=>d.id);
-	
+ 	// legend component
+ 	var legend = svg.append('g')
+ 		.attr('id', 'legend')
+ 	
+ 	// call axis 		
+ 	legend.append('g')
+ 		.call(xLegendAxis)
+ 		.attr('transform', 'translate(400, 13)') //axis position
 
-
-	svg.append('g')
-	.attr('id', 'legend')
-		.selectAll('path')
-		.data(geojson.features)
-		.enter()
-		.append('path')
-		.attr('class', 'county')
-		.attr('d', path)
-		.attr('fill', function(d,s){
-			return arr.includes(education[s].fips) 
-			? color(education[s].bachelorsOrHigher) 
-			: 0;
-		})
-		.on("mouseover", function(d, s){
-			tooltip
-				.style("visibility", "visible")
-				.text( education[s].area_name + ". " +education[s].state+ ": " + education[s].bachelorsOrHigher + "%")
-		})
-		.attr('data-fips', d => d.id)
-		// d is features
-		.attr('data-education', (d) => {
-			var res = education.filter(obj => obj.fips == d.id)
-			return res[0] ? res[0].bachelorsOrHigher : 0;
-		})
-//		.attr('data-education', (d,s) => education[s].bachelorsOrHigher)
-
-
-	
-
+// print rects
+ 	legend.append('g')
+ 		.selectAll('rect')
+ 		.data(grade)
+ 		.enter()
+ 		.append('rect')
+ 		// size
+		.attr('width', legendWidth / grade.length)
+ 		.attr('height', 10)
+ 		// position
+ 		.attr('x', (d, i) => legendWidth / grade.length * i)
+ 		.attr('transform', 'translate(400, 3)') 		
+		.style('fill', d => color(d))
 }
+
 </script>
 <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>

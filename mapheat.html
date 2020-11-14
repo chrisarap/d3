@@ -5,6 +5,20 @@
 </head>
 <body>
 <script>
+	var title = d3.select('body')
+		.append('h1')
+		.text('mapheat')
+		.attr('id', 'title');
+
+	var subtitle = d3.select('body')
+		.append('h2')
+		.attr('id', 'description');	
+
+    var tooltip = d3.select('body')
+        .append('div')
+        .attr('id', 'tooltip')
+        .style('opacity', 0)
+
 var width = 800;
 var height = 450;
 var padding = 30;
@@ -13,14 +27,16 @@ var url = 'https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/m
 // import data from json
 d3.json(url, callback)
 
+	
+
 function callback(error, dataset){
+	// subtitle
+	subtitle.text(dataset.monthlyVariance[0].year + ' - ' + dataset.monthlyVariance[dataset.monthlyVariance.length - 1].year + ': base temperature ' + dataset.baseTemperature + 'ºC')
 	// create canvas
 	var svg = d3.select("body")
 		.append("svg")
 		.attr("width", width)
 		.attr("height", height)
-		.style("background", "green");
- 
 
 	// scales
 	var xScale = d3.scaleBand()
@@ -31,29 +47,44 @@ function callback(error, dataset){
 
 		// calling axis
 		svg.append("g")
-			.attr("transform", "translate(0, " + (height - padding) + ")")
+			.attr('transform', 'translate('+ padding + ',' + (height - padding) + ')')
 			.call(xAxis)
+			.attr('id', 'x-axis')
 
-	var monthNumber = [1,2,3,4,5,6,7,8,9,10,11,12].reverse();
-	var monthName = ["jan", "feb", "mar", "apr", "may", "jun", 
-		"jul", "aug","sep", "oct", "nov", "dec"];
-	
+	var monthNumber = [0, 1,2,3,4,5,6,7,8,9,10,11];
+
+	var monthName = ['January',
+			'February',
+			'March',
+			'April',
+			'May',
+			'June',
+			'July',
+			'August',
+			'September',
+			'October',
+			'November',
+			'December'];
+
 	var yScale = d3.scaleBand()
 		.domain(monthNumber)
-		.range([height - padding, padding]);
+		.range([padding, height - padding]);
 
-	var yAxis = d3.axisLeft(yScale).tickFormat(monthNum => monthName[monthNum - 1]);
+	var yAxis = d3.axisLeft(yScale)
+		.tickValues(yScale.domain())
+		.tickFormat(d=>monthName[d])
+			
 		svg.append("g")
-			.attr("transform", "translate(" + padding + ", 0)")
+			.attr("transform", "translate(" + padding *2 + ", 0)")
 			.call(yAxis)
+			.attr('id', 'y-axis')
 
-	// color scale
-	var color = d3.scaleLinear()
-		.domain([
-			d3.min(dataset.monthlyVariance, d => d.variance),
-			d3.max(dataset.monthlyVariance, d => d.variance)
-		])
-		.range(["white", "blue"]);
+	
+	var myDomain = dataset.monthlyVariance.map(d=>d.variance).sort((a,b)=>a-b);
+	var colors = d3.schemeCategory20;
+	var paint = d3.scaleQuantize()
+		.domain([d3.min(myDomain), d3.max(myDomain)])
+		.range(['#004eff', '#00b4ff', '#e0ff00', '#ffc900', '#ff9600', '#ff7000', '#ff4100']);
 
  	// print squares
 	svg.selectAll("rect")
@@ -61,11 +92,69 @@ function callback(error, dataset){
 		.enter()
 		.append("rect")
 		.attr("x", d => xScale(d.year))
-		.attr("y", d => yScale(d.month))
+		.attr("y", d => yScale(d.month - 1))
 		.attr("width", xScale.bandwidth())
 		.attr("height", yScale.bandwidth())
-		.style("fill", d => color(d.variance))
+		.style("fill", d => paint(d.variance))
+		.attr('class', 'cell')
+		.attr('transform', 'translate(' +  padding+ ', 0)')
+		//properties
+		.attr('data-month', d => d.month - 1)
+		.attr('data-year', d => d.year)
+		.attr('data-temp', d => d.variance)
+		// tooltip with mouse event
+        .on('mouseover', function (d, i) {
+            tooltip.style('opacity', 1)
+                .style('background', 'green')
+                .attr('data-year', d.year)
+                .html(d.year)
+        })
+        .on('mouseout', function() {
+            tooltip.style('opacity', 0);
+        })
+
+	{/* legen */}
+	// size
+ 	var legendWidth = 300,
+ 		legendHeight = 200;
+
+ 	// filter temperature
+ 	var temperature = dataset.monthlyVariance.map(d => d.variance);
+ 	var minTemp = d3.min(temperature);
+ 	var maxTemp = d3.max(temperature);
+
+ 	// scale
+ 	var xLegendScale = d3.scaleLinear()
+ 		.domain([minTemp, maxTemp])
+ 		.range([0, legendWidth]);
+ 	
+ 	// axis
+ 	var xLegendAxis = d3.axisBottom(xLegendScale);
+
+ 	// legend component
+ 	var legend = svg.append('g')
+ 		.attr('id', 'legend')
+	// call axis 		
+ 	legend.append('g')
+ 		.call(xLegendAxis)
+ 		.attr('transform', 'translate(400, 13)') //axis position
+
+ 	// print rects
+ 	legend.append('g')
+ 		.selectAll('rect')
+ 		.data(temperature.sort((a, b) => a - b))
+ 		.enter()
+ 		.append('rect')
+ 		// size
+		.attr('width', legendWidth / temperature.length)
+ 		.attr('height', 10)
+ 		// position
+ 		.attr('x', (d, i) => legendWidth / temperature.length * i)
+ 		.attr('transform', 'translate(400, 3)') 		
+		.style('fill', d => paint(d))
+
 }
 </script>
+<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>
 </html>

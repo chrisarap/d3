@@ -2,7 +2,6 @@
 <html>
 <head>
 	<script src="https://d3js.org/d3.v4.js"></script>
-
 </head>
 <body>
 	<h1 id=title>United State GPD</h1>
@@ -115,7 +114,7 @@
 			.attr('width', barWidth)
 			.attr('height', d => d)
 			.attr('transform', 'translate(60, 0)')
-			
+			// tooltip with mouse event
 			.on('mouseover', function (d, i) {
 				tooltip.style('opacity', 1)
 					.style('background', 'green')
@@ -126,9 +125,6 @@
 				tooltip.style('opacity', 0);
 			})
 	}
-
-
-
   </script>
   <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>

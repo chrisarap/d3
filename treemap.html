@@ -2,6 +2,17 @@
 <html>
 <head>
 	<script src="https://d3js.org/d3.v4.js"></script>
+
+	<style>
+	#tooltip{
+		position: absolute;
+		padding: 10px;
+		background: rgba(255, 255, 204, 0.95);
+		border: 0;
+		border-radius: 2px;
+		pointer-events: none;
+	} 
+</style>
 </head>
 <body>
 <script>
@@ -13,17 +24,30 @@ var url = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/vide
 // import data from json url
 d3.json(url, callback);
 
-//console.log(d3.scaleOrdinal(d3.schemeCategory20));
-//console.log(d3.schemeCategory20);
+var tooltip = d3.select('body')
+	.append('div')
+	.attr('id', 'tooltip')
+	.style('opacity', 0)
+
 
 
 
 function callback(error, dataset){
+	//title
+	var title = d3.select('body')
+		.append('h1')
+		.text(dataset.name)
+		.attr('id', 'title')
 
-	var bigNames = dataset.children.map(d=>d.name);
+	// description
+	var description = d3.select('body')
+		.append('p')
+		.text('Top 100 Most Sold Video Games Grouped by Platform')
+		.attr('id', 'description')
+
 	var colors = d3.schemeCategory20;
 	var paint = d3.scaleOrdinal()
-		.domain(bigNames)
+		.domain(dataset.children.map(d => d.name))
 		.range(colors);
 
 	// create canvas
@@ -31,7 +55,6 @@ function callback(error, dataset){
 		.append("svg")
 		.attr("width", width)
 		.attr("height", height)
-		//.style("background", "green");
 
 	var root = d3.hierarchy(dataset)
 		.sum(d => d.value)
@@ -50,6 +73,22 @@ function callback(error, dataset){
 		.attr("width", d => d.x1 - d.x0)
 		.attr("height", d => d.y1 - d.y0)
 		.style("fill", d => paint(d.parent.data.name))
+		.attr('class', 'tile')
+		// properties
+		.attr('data-name', d => d.data.name)
+		.attr('data-category', d => d.data.category)
+		.attr('data-value', d => d.data.value)
+		// tooltip with mouse event
+		.on('mouseover', function (d, i) {
+			tooltip.style('opacity', 1)
+				.attr('data-value', d.data.value)
+				.html(d.data.name+ ' ' + d.data.value)
+				.style('left', d3.event.pageX + 10 + 'px')
+        		.style('top', d3.event.pageY - 28 + 'px');
+		})
+		.on('mouseout', function() {
+			tooltip.style('opacity', 0);
+		})
 
 	svg.selectAll("text")
 		.data(root.leaves())
@@ -60,8 +99,39 @@ function callback(error, dataset){
 		.text(d=>d.data.name)
 		.style("font-size", "7px")
 
+	{/* legen */}
+	var legend = d3.select("body")
+		.append("svg")
+		//.attr("width", width)
+		//.attr("height", height)
+		.attr('id', 'legend')
+ 		
+ 		var squareSize = 15;
+ 	// print rects
+ 	legend.selectAll('rect')
+ 		.data(dataset.children)
+ 		.enter()
+ 		.append('rect')
+ 		// size
+		.attr('width', squareSize)
+ 		.attr('height', squareSize)
+ 		// position
+ 		.attr('x', 0)
+ 		.attr('y', (d, i) => squareSize * i)
+ 		.style("fill", d => paint(d.name))
+ 		.attr('class', 'legend-item')
 
+ 		
+
+ 	legend.selectAll('text')
+		.data(dataset.children)
+		.enter()
+		.append('text')
+        .attr('x', squareSize + 5)
+        .attr('y', (d, i) => squareSize * i)
+        .text(d => d.name)
 }
 </script>
+<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>
 </html>
